@@ -4,6 +4,27 @@ import pprint
 import re
 import unicodedata
 
+def cleanLineText(text):
+    dirtyText = text.get_text()
+    lineText = unicodedata.normalize('NFKD', dirtyText)
+
+    # Remove cross reference markings
+    lineText = re.sub(r'\(.*?\)', '', lineText)
+
+    # Remove footnote hyper link text
+    lineText = re.sub(r'\[.*?\]', '', lineText)
+    lineText.strip()
+
+    # Make all white space a single space
+    lineText = re.sub('\\s+', ' ', lineText)
+
+    # Text sections marked as chapternum start with the chapter number instead of the verse number
+    #   we place them with 1 because the chapternum sections always contain the first verse
+    # if text.find(class_='chapternum'):
+    lineText = re.sub(r'^[0-9]*', '', lineText, 1)
+
+    return lineText
+
 bibleUrls = {}
 
 url = 'https://www.biblegateway.com'
@@ -108,70 +129,72 @@ for book in soup.find_all(class_=re.compile(r'(nt|ot).*?book')):
             i = 0 
             r = requests.get(url + chapterUrl)
             soup = BeautifulSoup(r.content, features='html.parser')
-            # for line in soup.find_all(class_='text'):
+
             lastLineText = None
             for line in soup.find_all(class_='passage-text'):
-                # print(line.prettify())
-                # exit()
                 verse = ''
-                for text in line.find_all(class_='text'):
-                    # if not text.find_all(class_=['chapternum','versenum']):
-                    #     continue
+                isPoetry = False
+                if line.find(class_='poetry'):
+                    isPoetry = True
 
-                    lineText = unicodedata.normalize('NFKD', text.get_text())
+                # verse = ''
+                texts = line.find_all(class_='text')
+                for i, text in enumerate(texts):
 
-                    # Remove cross reference markings
-                    lineText = re.sub(r'\(.*?\)', '', lineText)
+                    lineText = cleanLineText(text)
+                    classText = text.get('class')[1]
 
-                    # Remove footnote hyper link text
-                    lineText = re.sub(r'\[.*?\]', '', lineText)
-                    lineText.strip()
+                    nextText = None
+                    if not i + 1 == len(texts):
+                        nextText = texts[i+1]
+                        nextLineText = cleanLineText(nextText)
 
-                    # Make all white space a single space
-                    lineText = re.sub('\\s+', ' ', lineText)
+                    lastText = None
+                    if i > 0:
+                        lastText = texts[i-1]
 
-                #     verse = verse + ' ' + lineText
-                # verseNumber = verse.split(' ', 2)[1]
-                # verseFinal = verse.split(' ', 2)[2]
-                # bible[bookName][chapterName][verseNumber] = verseFinal
-                # print(verseFinal)
-                    # print()
-                    # print(text.prettify())
-                    # print()
-                    # Text sections marked as chapternum start with the chapter number instead of the verse number
-                    #   we place them with 1 because the chapternum sections always contain the first verse
-                    print(lineText)
-                    if text.find(class_='chapternum'):
-                        lineText = re.sub(r'([0-9]*) ', '1 ', lineText, 1)
-                        print('\t\tsubbed a chapter num!')
-                    if not re.fullmatch(r'([0-9]*) .*', lineText):
-                        print('\t\tdoes not start with a num!')
-                    lastLineText = lineText
+                    diag = False
+                    if diag:
+                        print("Len: " + str(len(texts)))
+                        print('i: ' + str(i))
+                        if not re.fullmatch(r'([0-9]*) .*', lineText):
+                            print('does not start with a num!')
+                        #if text.get('id'):
+                        #    print('\t\tID: ' + str(text.get('id')))
+                        print('ID: ' + str(text.get('id')))
+                        if nextText:
+                            print('Next ID: ' + str(nextText.get('id')))
+                        print('Class name: ' + classText)
+                        pprint.pprint(text)
+                        if nextText:
+                            print('class: ' + text.get('class')[1] + ', nextClass: ' + nextText.get('class')[1])
+                        print('Text: ' + lineText)
+                        print()
 
-                    i = i + 1
-                    if (i>8):
-                        break
-            print('----')
-            continue
-                #print(line.prettify())
-                #print()
-            #print(soup.prettify())
-# exit()
-#pprint.pprint(bible)
-exit()
-for book in bible.values():
-    #exit()
-    for chapter in book.values():
-        print(chapter)
-exit()
+                    # If the next line has the same class name (i.e. Jonah 2-1)
+                    #   and the next line does not have a number in the start
+                    if nextText:
+                        if text.get('class')[1] == nextText.get('class')[1] and not re.fullmatch(r'([0-9]*) .*', lineText) and text.get('id'):
+                            # print('Remove title: ' + classText)
+                            # print()
+                            continue
+                        
+                    if lastText:
+                        if text.get('class')[1] == lastText.get('class')[1] and not text.get('id') and isPoetry:
+                            print('adding: ' + classText)
+                            if classText not in bible[bookName][chapterName]:
+                                bible[bookName][chapterName][classText] = lineText
+                                continue
+                            bible[bookName][chapterName][classText] = bible[bookName][chapterName][classText] + ' ' + lineText
 
-# for book in soup.find_all(class_="chapters collapse"):
-#     for chapter in book.contents:
-#          print(chapter)
-    # pprint.pprint(book.contents[0].get('title'))
+                            print(classText + ':\t' + bible[bookName][chapterName][classText])
+                            continue
 
-# for table in soup.find_all('td'):
-#     print()
-#     pprint.pprint(vars(table))
-    # if '/passage/' in href:
-    #     print(href)
+                    bible[bookName][chapterName][classText] = lineText
+
+for i, (bookName, chapters) in enumerate(bible.items()):
+    print(bookName)
+    print('----')
+    for i, (chapterName, verses) in enumerate(chapters.items()):
+        for i, (verseName, verse) in enumerate(verses.items()):
+            print(verseName + ':\t' + verse)
