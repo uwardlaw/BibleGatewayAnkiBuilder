@@ -175,8 +175,7 @@ for book in soup.find_all(class_=re.compile(r'(nt|ot).*?book')):
                         # If it's poetry then we might add multiple lines into one
                         #   verse
                         if (text.get('class')[1] == lastText.get('class')[1] and
-                            not text.get('id') and
-                            isPoetry):
+                            not text.get('id')):
                             
                             # If there is a prose line mixed in with the poetry
                             #   or it's the first poetry line, it should just be entered
