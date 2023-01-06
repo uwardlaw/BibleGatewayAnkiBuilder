@@ -60,5 +60,6 @@ $secondLine = '    "cmd": ["' + (Get-item .).parent.fullname + "\venv\Scripts\py
 $secondLine = $secondLine.replace('\', '/')
 Add-content -Path $packageBuildPath -Value $secondLine
 Add-content -Path $packageBuildPath -Value '    "file_regex": "^[ ]File \"(...?)\", line ([0-9]*)",'
-Add-content -Path $packageBuildPath -Value '    "selector": "source.activate"'
+Add-content -Path $packageBuildPath -Value '    "selector": "source.activate",'
+Add-content -Path $packageBuildPath -Value '    "env": {"PYTHONIOENCODING": "utf8"}'
 Add-content -Path $packageBuildPath -Value "}" 
