@@ -72,8 +72,8 @@ for link in soup.find_all('a'):
 # For testing, only work with ESV for now
 selectedBibleCode = 'ESV'
 # selectedBooks = ['Jonah', 'Lamentations']
-selectedBooks = ['Jonah']
-# selectedBooks = ['Jonah', 'Lamentations']
+# selectedBooks = ['Jonah']
+selectedBooks = ['Jonah', 'Lamentations']
 # selectedBooks = ['Jonah', 'Lamentations']
 
 bible = {}
@@ -181,20 +181,24 @@ for book in soup.find_all(class_=re.compile(r'(nt|ot).*?book')):
                         
                     if lastText:
                         if text.get('class')[1] == lastText.get('class')[1] and not text.get('id') and isPoetry:
-                            print('adding: ' + classText)
+                            # print('adding: ' + classText)
                             if classText not in bible[bookName][chapterName]:
                                 bible[bookName][chapterName][classText] = lineText
                                 continue
                             bible[bookName][chapterName][classText] = bible[bookName][chapterName][classText] + ' ' + lineText
 
-                            print(classText + ':\t' + bible[bookName][chapterName][classText])
+                            # print(classText + ':\t' + bible[bookName][chapterName][classText])
                             continue
 
                     bible[bookName][chapterName][classText] = lineText
 
 for i, (bookName, chapters) in enumerate(bible.items()):
     print(bookName)
-    print('----')
+    print('---')
     for i, (chapterName, verses) in enumerate(chapters.items()):
         for i, (verseName, verse) in enumerate(verses.items()):
-            print(verseName + ':\t' + verse)
+            verseName = verseName.split('-')
+            v = verseName[0] + ' ' + verseName[1] + ':' + verseName[2]
+            print(v + '\t' + verse)
+        print()
+    print('\n\n')
