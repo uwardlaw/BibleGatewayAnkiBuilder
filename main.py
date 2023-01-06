@@ -3,6 +3,9 @@ import requests
 import pprint
 import re
 import unicodedata
+import os
+
+import genanki
 
 def cleanLineText(text):
     dirtyText = text.get_text()
@@ -24,6 +27,18 @@ def cleanLineText(text):
     lineText = re.sub(r'^[0-9]*', '', lineText, 1)
 
     return lineText
+
+def printBible(bible):
+    for i, (bookName, chapters) in enumerate(bible.items()):
+        print(bookName)
+        print('---')
+        for i, (chapterName, verses) in enumerate(chapters.items()):
+            for i, (verseName, verse) in enumerate(verses.items()):
+                verseName = verseName.split('-')
+                v = verseName[0] + ' ' + verseName[1] + ':' + verseName[2]
+                print(v + '\t' + verse)
+            print()
+        print('\n\n')
 
 bibleUrls = {}
 
@@ -70,7 +85,7 @@ for link in soup.find_all('a'):
 
 
 # For testing, only work with ESV for now
-selectedBibleCode = 'ESV'
+selectedBibleCode = 'NLT'
 # selectedBooks = ['Jonah', 'Lamentations']
 # selectedBooks = ['Jonah']
 selectedBooks = ['Jonah', 'Lamentations']
@@ -117,88 +132,65 @@ for book in soup.find_all(class_=re.compile(r'(nt|ot).*?book')):
     # so replace the + with a space
     bookName = " ".join(bookName.split('+'))
 
-
     if bookName in selectedBooks:
         bible[bookName] = {}
         for chapter in book.find_all('a'):
             chapterName = chapter.get('title')
             chapterUrl = chapter.get('href')
             bible[bookName][chapterName] = {}
-            #bible[bookName][chapterName]['url'] = url + chapterUrl
 
-            i = 0 
             r = requests.get(url + chapterUrl)
             soup = BeautifulSoup(r.content, features='html.parser')
 
-            lastLineText = None
             for line in soup.find_all(class_='passage-text'):
-                verse = ''
+
+                # The bible contains prose and poetry
+                #   A single verse of poetry
+                #   is often broken into multiple lines 
                 isPoetry = False
                 if line.find(class_='poetry'):
                     isPoetry = True
 
-                # verse = ''
                 texts = line.find_all(class_='text')
                 for i, text in enumerate(texts):
 
                     lineText = cleanLineText(text)
-                    classText = text.get('class')[1]
+                    classText = text.get('class')[1]               
 
-                    nextText = None
-                    if not i + 1 == len(texts):
+                    if i < len(texts) - 1:
+
                         nextText = texts[i+1]
                         nextLineText = cleanLineText(nextText)
 
-                    lastText = None
+                        # Check if it's a "title" for a chapter
+                        if (text.get('class')[1] == nextText.get('class')[1] and
+                            not re.fullmatch(r'([0-9]*) .*', lineText) and
+                            text.get('id')):
+                            continue
+
                     if i > 0:
+
                         lastText = texts[i-1]
 
-                    diag = False
-                    if diag:
-                        print("Len: " + str(len(texts)))
-                        print('i: ' + str(i))
-                        if not re.fullmatch(r'([0-9]*) .*', lineText):
-                            print('does not start with a num!')
-                        #if text.get('id'):
-                        #    print('\t\tID: ' + str(text.get('id')))
-                        print('ID: ' + str(text.get('id')))
-                        if nextText:
-                            print('Next ID: ' + str(nextText.get('id')))
-                        print('Class name: ' + classText)
-                        pprint.pprint(text)
-                        if nextText:
-                            print('class: ' + text.get('class')[1] + ', nextClass: ' + nextText.get('class')[1])
-                        print('Text: ' + lineText)
-                        print()
-
-                    # If the next line has the same class name (i.e. Jonah 2-1)
-                    #   and the next line does not have a number in the start
-                    if nextText:
-                        if text.get('class')[1] == nextText.get('class')[1] and not re.fullmatch(r'([0-9]*) .*', lineText) and text.get('id'):
-                            # print('Remove title: ' + classText)
-                            # print()
-                            continue
-                        
-                    if lastText:
-                        if text.get('class')[1] == lastText.get('class')[1] and not text.get('id') and isPoetry:
-                            # print('adding: ' + classText)
+                        # If it's poetry then we might add multiple lines into one
+                        #   verse
+                        if (text.get('class')[1] == lastText.get('class')[1] and
+                            not text.get('id') and
+                            isPoetry):
+                            
+                            # If there is a prose line mixed in with the poetry
+                            #   or it's the first poetry line, it should just be entered
                             if classText not in bible[bookName][chapterName]:
                                 bible[bookName][chapterName][classText] = lineText
                                 continue
-                            bible[bookName][chapterName][classText] = bible[bookName][chapterName][classText] + ' ' + lineText
 
-                            # print(classText + ':\t' + bible[bookName][chapterName][classText])
+                            # If the current line is a continuiation of poetry,
+                            #   add it to what ever is there
+                            bible[bookName][chapterName][classText] = bible[bookName][chapterName][classText] + ' ' + lineText
                             continue
 
+                    # If it's not poetry, if it's not a chapter title, and it's not
+                    # prose in poetry, then it's just a regular verse that we can add
                     bible[bookName][chapterName][classText] = lineText
 
-for i, (bookName, chapters) in enumerate(bible.items()):
-    print(bookName)
-    print('---')
-    for i, (chapterName, verses) in enumerate(chapters.items()):
-        for i, (verseName, verse) in enumerate(verses.items()):
-            verseName = verseName.split('-')
-            v = verseName[0] + ' ' + verseName[1] + ':' + verseName[2]
-            print(v + '\t' + verse)
-        print()
-    print('\n\n')
+printBible(bible)
