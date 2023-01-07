@@ -1,2 +1,7 @@
 beautifulsoup4
 requests
+
+# Genanki
+cached-property
+chevron
+pyyaml
