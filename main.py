@@ -246,4 +246,4 @@ for book in soup.find_all(class_=re.compile(r'(nt|ot).*?book')):
 
 
 printBible(bible)
-#createCards(bible)
+createCards(bible)
