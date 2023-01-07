@@ -5,7 +5,7 @@ import re
 import unicodedata
 import os
 
-import genanki
+import genanki.genanki as genanki
 
 def cleanLineText(text):
     dirtyText = text.get_text()
@@ -39,6 +39,57 @@ def printBible(bible):
                 print(v + '\t' + verse)
             print()
         print('\n\n')
+
+
+def createCards(bible):
+
+    BASIC_TYPE_IN_THE_ANSWER_MODEL = genanki.Model(
+        1305533440,
+        'Basic (type in the answer) (genanki)',
+        fields=[{
+            'name': 'Front',
+            'font': 'Arial',
+        },
+        {
+            'name': 'Back',
+            'font': 'Arial',
+        },
+        ],
+        templates=[{
+            'name': 'Card 1',
+            'qfmt': '{{Front}}\n\n{{type:Back}}',
+            'afmt': '{{Front}}\n\n<hr id=answer>\n\n{{type:Back}}',
+            },
+        ],
+        css='.card {\n font-family: arial;\n font-size: 20px;\n text-align: center;\n color: black;\n background-color: white;\n}\n',
+    )
+
+    deck = genanki.Deck(
+        1305533440,
+        'Bible'
+    )
+
+    for i, (bookName, chapters) in enumerate(bible.items()):
+        for i, (chapterName, verses) in enumerate(chapters.items()):
+            for i, (verseName, verse) in enumerate(verses.items()):
+
+                # Tag for bookname?         
+                # Tag for chapter name?
+                v = verseName.split('-')
+                verseName = v[0] + ' ' + v[1] + ':' + v[2]
+                bookName = re.sub('\\s+', '', bookName)
+                chapterName = re.sub('\\s+', '', chapterName)
+
+                deck.add_note(
+                    genanki.Note(
+                        model = BASIC_TYPE_IN_THE_ANSWER_MODEL,
+                        fields=[verseName,verse],
+                        tags=[bookName, chapterName]
+                    )
+                )
+
+    genanki.Package(deck).write_to_file('bible.apkg')
+
 
 bibleUrls = {}
 
@@ -87,8 +138,8 @@ for link in soup.find_all('a'):
 # For testing, only work with ESV for now
 selectedBibleCode = 'NLT'
 # selectedBooks = ['Jonah', 'Lamentations']
-# selectedBooks = ['Jonah']
-selectedBooks = ['Jonah', 'Lamentations']
+selectedBooks = ['Jonah']
+# selectedBooks = ['Jonah', 'Lamentations']
 # selectedBooks = ['Jonah', 'Lamentations']
 
 bible = {}
@@ -192,4 +243,7 @@ for book in soup.find_all(class_=re.compile(r'(nt|ot).*?book')):
                     # prose in poetry, then it's just a regular verse that we can add
                     bible[bookName][chapterName][classText] = lineText
 
+
+
 printBible(bible)
+#createCards(bible)
