@@ -3,7 +3,7 @@ import requests
 import pprint
 import re
 import unicodedata
-import os
+import pathlib
 
 import genanki.genanki as genanki
 
@@ -88,7 +88,8 @@ def createCards(bible):
                     )
                 )
 
-    genanki.Package(deck).write_to_file('bible.apkg')
+    pathlib.Path('./decks').mkdir(exist_ok=True)
+    genanki.Package(deck).write_to_file('decks/bible.apkg')
 
 
 bibleUrls = {}
