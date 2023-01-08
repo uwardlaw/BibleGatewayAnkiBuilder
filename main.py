@@ -29,11 +29,11 @@ def cleanLineText(text):
     return lineText
 
 def printBible(bible):
-    for i, (bookName, chapters) in enumerate(bible.items()):
+    for bookName, chapters in bible.items():
         print(bookName)
         print('---')
-        for i, (chapterName, verses) in enumerate(chapters.items()):
-            for i, (verseName, verse) in enumerate(verses.items()):
+        for chapterName, verses in chapters.items():
+            for verseName, verse in verses.items():
                 verseName = verseName.split('-')
                 v = verseName[0] + ' ' + verseName[1] + ':' + verseName[2]
                 print(v + '\t' + verse)
@@ -69,9 +69,9 @@ def createCards(bible):
         'Bible'
     )
 
-    for i, (bookName, chapters) in enumerate(bible.items()):
-        for i, (chapterName, verses) in enumerate(chapters.items()):
-            for i, (verseName, verse) in enumerate(verses.items()):
+    for bookName, chapters in bible.items():
+        for chapterName, verses in chapters.items():
+            for verseName, verse in verses.items():
 
                 # Tag for bookname?         
                 # Tag for chapter name?
@@ -243,7 +243,5 @@ for book in soup.find_all(class_=re.compile(r'(nt|ot).*?book')):
                     # prose in poetry, then it's just a regular verse that we can add
                     bible[bookName][chapterName][classText] = lineText
 
-
-
-printBible(bible)
+#printBible(bible)
 createCards(bible)
