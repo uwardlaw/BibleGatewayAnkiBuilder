@@ -5,3 +5,6 @@ requests
 cached-property
 chevron
 pyyaml
+
+# Databse
+ZODB

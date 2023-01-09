@@ -5,7 +5,9 @@ import re
 import unicodedata
 import pathlib
 
+import gateway
 import anki as ak
+import database
 
 def cleanLineText(text):
     dirtyText = text.get_text()
@@ -41,50 +43,6 @@ def printBible(bible):
             print()
         print('\n\n')
 
-bibleUrls = {}
-
-url = 'https://www.biblegateway.com'
-r = requests.get(url + '/versions/')
-soup = BeautifulSoup(r.content, features='html.parser')
-
-# This pattern matches things likely to be the bible
-# code in a string such as "English Standard Version (ESV)"
-
-# Search for:
-# .*? any number of leading characters
-# (\ matches a open parenthesis
-# .*? matches any number of characters (i.e. the bible code)
-# /) a closing parenthesis
-# $ only matches the end of the string
-codePattern = re.compile(r'.*?(\(.*?\))$')
-
-for link in soup.find_all('a'):
-    if len(link.contents) > 1:
-        continue
-    href = link.get('href')
-
-    if '/versions/' in href:    
-        bibleUrl = href.split('/versions/')[1].strip()
-
-        if not bibleUrl.isspace() and not bibleUrl == "":
-
-            # The link contents contain the names of the bible versions
-            # Grab occurences that could be the bible code
-            match = re.search(codePattern, str(link.contents[0]))
-
-            # If more than one potential code, make a list out of it
-            code = (match.group(1).split(' '))
-
-            # Take the last match because the code is always listed last
-            code = code[-1]
-
-            # Get the string without the surrounding parenthese
-            code = code[1:-1]
-
-            bibleUrls[code] = {}
-            bibleUrls[code]['url'] = url + '/versions/' + bibleUrl
-
-
 # For testing, only work with ESV for now
 selectedBibleCode = 'NLT'
 # selectedBooks = ['Jonah', 'Lamentations']
@@ -92,10 +50,18 @@ selectedBooks = ['Jonah']
 # selectedBooks = ['Jonah', 'Lamentations']
 # selectedBooks = ['Jonah', 'Lamentations']
 
-bible = {}
-#bible['url'] = bibleUrls[selectedBibleCode]['url']
+url = 'https://www.biblegateway.com'
+db = database.Database()
+gate = gateway.Gateway(db)
 
-r = requests.get(bibleUrls[selectedBibleCode]['url'])
+if (bibleUrl := gate.getBibleUrl(selectedBibleCode)) is None:
+    gate.updateAvailable()
+    if (bibleUrl := gate.getBibleUrl(selectedBibleCode)) is None:
+        print('Bible version not available')
+        exit()
+
+bible = {}
+r = requests.get(bibleUrl)
 soup = BeautifulSoup(r.content, features='html.parser')
 
 # For testing, only work with two books for now
@@ -193,7 +159,8 @@ for book in soup.find_all(class_=re.compile(r'(nt|ot).*?book')):
                     # prose in poetry, then it's just a regular verse that we can add
                     bible[bookName][chapterName][classText] = lineText
 
-# printBible(bible)
+printBible(bible)
 # createCards(bible)
-a = ak.Anki()
-a.writeDeck(bible)
+# a = ak.Anki()
+# a.writeDeck(bible)
+
