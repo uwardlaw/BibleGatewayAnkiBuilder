@@ -31,5 +31,9 @@ class Database():
         self.root['available'][code] = url
         transaction.commit()
 
+    def addBible(self, version, bible):
+        self.root['bibles'][version] = bible
+        transaction.commit()
+
     def close(self):
         self.db.close()

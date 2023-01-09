@@ -35,8 +35,6 @@ class Anki():
             for chapterName, verses in chapters.items():
                 for verseName, verse in verses.items():
 
-                    # Tag for bookname?         
-                    # Tag for chapter name?
                     v = verseName.split('-')
                     verseName = v[0] + ' ' + v[1] + ':' + v[2]
                     bookName = re.sub('\\s+', '', bookName)
