@@ -5,7 +5,7 @@ import re
 import unicodedata
 import pathlib
 
-import genanki.genanki as genanki
+import anki as ak
 
 def cleanLineText(text):
     dirtyText = text.get_text()
@@ -33,64 +33,13 @@ def printBible(bible):
         print(bookName)
         print('---')
         for chapterName, verses in chapters.items():
+            print(chapterName)
             for verseName, verse in verses.items():
                 verseName = verseName.split('-')
                 v = verseName[0] + ' ' + verseName[1] + ':' + verseName[2]
                 print(v + '\t' + verse)
             print()
         print('\n\n')
-
-
-def createCards(bible):
-
-    BASIC_TYPE_IN_THE_ANSWER_MODEL = genanki.Model(
-        1305533440,
-        'Basic (type in the answer) (genanki)',
-        fields=[{
-            'name': 'Front',
-            'font': 'Arial',
-        },
-        {
-            'name': 'Back',
-            'font': 'Arial',
-        },
-        ],
-        templates=[{
-            'name': 'Card 1',
-            'qfmt': '{{Front}}\n\n{{type:Back}}',
-            'afmt': '{{Front}}\n\n<hr id=answer>\n\n{{type:Back}}',
-            },
-        ],
-        css='.card {\n font-family: arial;\n font-size: 20px;\n text-align: center;\n color: black;\n background-color: white;\n}\n',
-    )
-
-    deck = genanki.Deck(
-        1305533440,
-        'Bible'
-    )
-
-    for bookName, chapters in bible.items():
-        for chapterName, verses in chapters.items():
-            for verseName, verse in verses.items():
-
-                # Tag for bookname?         
-                # Tag for chapter name?
-                v = verseName.split('-')
-                verseName = v[0] + ' ' + v[1] + ':' + v[2]
-                bookName = re.sub('\\s+', '', bookName)
-                chapterName = re.sub('\\s+', '', chapterName)
-
-                deck.add_note(
-                    genanki.Note(
-                        model = BASIC_TYPE_IN_THE_ANSWER_MODEL,
-                        fields=[verseName,verse],
-                        tags=[bookName, chapterName]
-                    )
-                )
-
-    pathlib.Path('./decks').mkdir(exist_ok=True)
-    genanki.Package(deck).write_to_file('decks/bible.apkg')
-
 
 bibleUrls = {}
 
@@ -244,5 +193,7 @@ for book in soup.find_all(class_=re.compile(r'(nt|ot).*?book')):
                     # prose in poetry, then it's just a regular verse that we can add
                     bible[bookName][chapterName][classText] = lineText
 
-#printBible(bible)
-createCards(bible)
+# printBible(bible)
+# createCards(bible)
+a = ak.Anki()
+a.writeDeck(bible)
