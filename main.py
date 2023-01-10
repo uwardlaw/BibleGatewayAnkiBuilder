@@ -28,6 +28,9 @@ def cleanLineText(text):
     # if text.find(class_='chapternum'):
     lineText = re.sub(r'^[0-9]*', '', lineText, 1)
 
+    # Convert left and right quote to regular quote
+    lineText = re.sub(r'[\u201C\u201D]', '\u0022', lineText, re.U)
+
     return lineText
 
 def printBible(bible):
@@ -63,9 +66,6 @@ if (bibleUrl := gate.getBibleUrl(selectedBibleCode)) is None:
 bible = {}
 r = requests.get(bibleUrl)
 soup = BeautifulSoup(r.content, features='html.parser')
-
-# For testing, only work with two books for now
-
 
 # This pattern matches the only reliable source to find the the
 # name of the book being reviewed. The website links are basically
